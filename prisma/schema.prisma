@@ -1,0 +1,95 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    
+    // User session identifier (stored in localStorage)
+    sessionId String @unique
+    
+    // Master seed phrase for this user (encrypted)
+    masterSeed String
+    
+    // User's wallets
+    wallets Wallet[]
+    
+    // Chat rooms where user participates
+    chatRoomsAsParticipant1 ChatRoom[] @relation("Participant1")
+    chatRoomsAsParticipant2 ChatRoom[] @relation("Participant2")
+}
+
+model Wallet {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    
+    // Wallet details
+    name       String
+    type       WalletType
+    publicKey  String @unique
+    privateKey String
+    
+    // Derivation path for this wallet from master seed
+    derivationPath String
+    
+    // Owner of this wallet
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId String
+    
+    // Messages sent from this wallet
+    sentMessages Message[]
+}
+
+enum WalletType {
+    ETHEREUM
+    SOLANA
+}
+
+model ChatRoom {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Participants in the chat (Users, not just public keys)
+    participant1   User   @relation("Participant1", fields: [participant1Id], references: [id])
+    participant1Id String
+    participant2   User   @relation("Participant2", fields: [participant2Id], references: [id])
+    participant2Id String
+
+    // Primary wallet public keys for easy lookup
+    participant1PublicKey String
+    participant2PublicKey String
+
+    // Messages in this chat room
+    messages Message[]
+
+    @@unique([participant1Id, participant2Id])
+    @@unique([participant1PublicKey, participant2PublicKey])
+}
+
+model Message {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+
+    // The encrypted message content
+    content String
+
+    // Sender's wallet
+    senderWallet   Wallet @relation(fields: [senderWalletId], references: [id])
+    senderWalletId String
+
+    // Message signature for verification
+    signature String
+
+    // Chat room this message belongs to
+    chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+    chatRoomId String
+}
