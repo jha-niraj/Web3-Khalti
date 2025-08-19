@@ -7,7 +7,7 @@ import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
-	Dialog, DialogContent, DialogDescription, 
+	Dialog, DialogContent, DialogDescription,
 	DialogHeader, DialogTitle, DialogTrigger
 } from "../ui/dialog";
 import { Input } from "../ui/input";
@@ -38,7 +38,7 @@ const Navbar = () => {
 		try {
 			const { user, isNewUser: newUser } = await getOrCreateUserSession();
 			setIsNewUser(newUser);
-			
+
 			if (newUser) {
 				// Show the full seed phrase for new users
 				setUserSeed(user.masterSeed);
@@ -50,11 +50,16 @@ const Navbar = () => {
 				setSeedWords(user.masterSeed.split(" "));
 				toast.info("Please verify your seed phrase to continue.");
 			}
-			
+
 			setIsConnectDialogOpen(true);
 		} catch (error) {
 			console.error("Error connecting wallet:", error);
-			toast.error("Failed to connect wallet");
+			if (error instanceof Error) {
+				toast.error(error.message);
+			} else {
+				// fallback in case error is not a standard Error
+				toast.error("Failed to connect wallet");
+			}
 		}
 	};
 
@@ -69,7 +74,7 @@ const Navbar = () => {
 		fullSeedArray[4] = userInputs[1]; // 5th word
 
 		const isValid = await verifySeedPhrase(fullSeedArray);
-		
+
 		if (isValid) {
 			setIsVerified(true);
 			toast.success("Seed phrase verified successfully!");
@@ -102,7 +107,7 @@ const Navbar = () => {
 				<div className="flex items-center">
 					<Link href="/" className="flex items-center">
 						<Image
-							src="/favicon.ico"
+							src="/web3khalti.png"
 							alt="Logo"
 							width={40}
 							height={40}
@@ -111,12 +116,11 @@ const Navbar = () => {
 						<span className="ml-2 text-xl font-semibold">Web3 Khalti</span>
 					</Link>
 				</div>
-				
 				<div className="flex items-center gap-4">
 					<Dialog open={isConnectDialogOpen} onOpenChange={handleDialogClose}>
 						<DialogTrigger asChild>
-							<Button 
-								variant="outline" 
+							<Button
+								variant="outline"
 								size="sm"
 								onClick={handleConnectWallet}
 								className="hidden md:flex items-center gap-2"
@@ -131,96 +135,96 @@ const Navbar = () => {
 									{isNewUser ? "Welcome to Web3 Khalti!" : "Verify Your Identity"}
 								</DialogTitle>
 								<DialogDescription>
-									{isNewUser 
+									{isNewUser
 										? "Please save your seed phrase securely. You'll need it to access your wallet."
 										: "Please complete your seed phrase to verify your identity."
 									}
 								</DialogDescription>
 							</DialogHeader>
-							
-							{isNewUser ? (
-								<div className="space-y-4">
-									<div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-										<h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-											⚠️ Important: Save Your Seed Phrase
-										</h4>
-										<p className="text-sm text-yellow-700 dark:text-yellow-300">
-											This is your only way to recover your wallet. Write it down and store it safely!
-										</p>
-									</div>
-									
-									<div className="grid grid-cols-3 gap-2">
-										{seedWords.map((word, index) => (
-											<div 
-												key={index}
-												className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-											>
-												<span className="text-sm font-mono text-gray-500 w-6">
-													{index + 1}.
-												</span>
-												<span className="font-medium">{word}</span>
-											</div>
-										))}
-									</div>
-									
-									<Button 
-										onClick={handleNewUserComplete}
-										className="w-full"
-									>
-										I've Saved My Seed Phrase
-									</Button>
-								</div>
-							) : (
-								<div className="space-y-4">
-									<div className="grid grid-cols-3 gap-2">
-										{seedWords.map((word, index) => (
-											<div 
-												key={index}
-												className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-											>
-												<span className="text-sm font-mono text-gray-500 w-6">
-													{index + 1}.
-												</span>
-												<span className="font-medium">
-													{index === 3 || index === 4 ? "___" : word}
-												</span>
-											</div>
-										))}
-									</div>
-									
-									<div className="space-y-3">
-										<div>
-											<Label htmlFor="word4">4th word</Label>
-											<Input
-												id="word4"
-												value={userInputs[0]}
-												onChange={(e) => setUserInputs([e.target.value, userInputs[1]])}
-												placeholder="Enter the 4th word"
-											/>
+							{
+								isNewUser ? (
+									<div className="space-y-4">
+										<div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+											<h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+												⚠️ Important: Save Your Seed Phrase
+											</h4>
+											<p className="text-sm text-yellow-700 dark:text-yellow-300">
+												This is your only way to recover your wallet. Write it down and store it safely!
+											</p>
 										</div>
-										<div>
-											<Label htmlFor="word5">5th word</Label>
-											<Input
-												id="word5"
-												value={userInputs[1]}
-												onChange={(e) => setUserInputs([userInputs[0], e.target.value])}
-												placeholder="Enter the 5th word"
-											/>
+										<div className="grid grid-cols-3 gap-2">
+											{
+												seedWords.map((word, index) => (
+													<div
+														key={index}
+														className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+													>
+														<span className="text-sm font-mono text-gray-500 w-6">
+															{index + 1}.
+														</span>
+														<span className="font-medium">{word}</span>
+													</div>
+												))
+											}
 										</div>
+										<Button
+											onClick={handleNewUserComplete}
+											className="w-full"
+										>
+											I've Saved My Seed Phrase
+										</Button>
 									</div>
-									
-									<Button 
-										onClick={handleVerifySeed}
-										className="w-full"
-										disabled={!userInputs[0] || !userInputs[1]}
-									>
-										Verify Seed Phrase
-									</Button>
-								</div>
-							)}
+								) : (
+									<div className="space-y-4">
+										<div className="grid grid-cols-3 gap-2">
+											{
+												seedWords.map((word, index) => (
+													<div
+														key={index}
+														className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+													>
+														<span className="text-sm font-mono text-gray-500 w-6">
+															{index + 1}.
+														</span>
+														<span className="font-medium">
+															{index === 3 || index === 4 ? "___" : word}
+														</span>
+													</div>
+												))
+											}
+										</div>
+										<div className="space-y-3">
+											<div>
+												<Label htmlFor="word4">4th word</Label>
+												<Input
+													id="word4"
+													value={userInputs[0]}
+													onChange={(e) => setUserInputs([e.target.value, userInputs[1]])}
+													placeholder="Enter the 4th word"
+												/>
+											</div>
+											<div>
+												<Label htmlFor="word5">5th word</Label>
+												<Input
+													id="word5"
+													value={userInputs[1]}
+													onChange={(e) => setUserInputs([userInputs[0], e.target.value])}
+													placeholder="Enter the 5th word"
+												/>
+											</div>
+										</div>
+										<Button
+											onClick={handleVerifySeed}
+											className="w-full"
+											disabled={!userInputs[0] || !userInputs[1]}
+										>
+											Verify Seed Phrase
+										</Button>
+									</div>
+								)
+							}
 						</DialogContent>
 					</Dialog>
-
 					<div className="hidden md:flex items-center bg-muted/50 rounded-xl p-1 border border-border/50">
 						<Button
 							variant="ghost"
@@ -238,6 +242,9 @@ const Navbar = () => {
 						>
 							<Moon className="h-3 w-3 text-blue-500" />
 						</Button>
+					</div>
+					<div>
+						
 					</div>
 				</div>
 			</div>

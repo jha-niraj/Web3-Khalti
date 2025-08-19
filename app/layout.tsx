@@ -1,6 +1,7 @@
 import Navbar from "@/components/(landingpage)/navbar";
 import "./globals.css";
 import { ThemeProvider } from "@/components/themeproviders";
+import { AuthProvider } from "@/components/auth-provider";
 import { Geist, Geist_Mono, Poppins, Space_Grotesk } from "next/font/google";
 import Footer from "@/components/(landingpage)/footer";
 import { Toaster as SonnerToaster } from "sonner";
@@ -26,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 		<>
 			<html lang="en" suppressHydrationWarning>
 				<head>
-					<link rel="icon" href="/vercel.svg" />
+					<link rel="icon" href="/web3khalti.ico" />
 					<meta name="google-site-verification" content="B9KrfCl7J9ie_47H_sbiV-g0f5lZz5XCfLIShKuoDuc" />
 				</head>
 				<body className={`${spaceGrotesk.className} ${geistSans.variable} ${geistMono.variable} antialiased`}>
@@ -37,10 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 						enableSystem
 						disableTransitionOnChange
 					>
-						<Navbar />
-						{children}
-						<Footer />
-						<SonnerToaster position="top-center" closeButton richColors />
+						<AuthProvider>
+							<Navbar />
+							{children}
+							<Footer />
+							<SonnerToaster position="top-center" closeButton richColors />
+						</AuthProvider>
 					</ThemeProvider>
 				</body>
 			</html>

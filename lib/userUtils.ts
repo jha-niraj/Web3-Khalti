@@ -24,7 +24,7 @@ export interface Wallet {
 }
 
 // Create new account with password
-export const createAccount = async (password: string): Promise<{ user: User; masterSeed: string; sessionId: string }> => {
+export const createAccount = async (password: string): Promise<{ user: User; masterSeed: string; sessionId: string; error: string | null }> => {
     if (typeof window === "undefined") {
         throw new Error("This function can only be called on the client side");
     }
@@ -35,20 +35,25 @@ export const createAccount = async (password: string): Promise<{ user: User; mas
 
     // Generate session ID and master seed
     const sessionId = generateSessionId();
-    const masterSeed = generateMnemonic();
+    const masterSeed = generateMnemonic(128); // 12 words
 
     try {
         const result = await createUser(sessionId, masterSeed, password);
 
         if (result.error) {
+            localStorage.removeItem("web3khalti_session");
             throw new Error(result.error);
         }
 
         // Store session ID in localStorage
         localStorage.setItem("web3khalti_session", sessionId);
-        localStorage.setItem("web3khalti_password", password); // Store for convenience (you might want to encrypt this)
+        localStorage.setItem("web3khalti_password", result?.user?.passwordHash || "");
 
-        return { user: result.user!, masterSeed, sessionId };
+        return { 
+            user: result.user!, 
+            masterSeed, sessionId,
+            error: null
+        };
     } catch (error) {
         console.error("Error creating account:", error);
         throw error;
@@ -130,8 +135,7 @@ export const getOrCreateUserSession = async (): Promise<{ user: User; isNewUser:
     let sessionId = localStorage.getItem("web3khalti_session");
 
     if (!sessionId) {
-        sessionId = generateSessionId();
-        localStorage.setItem("web3khalti_session", sessionId);
+        throw new Error("No user session found. Please create an account first or Login In");
     }
 
     try {
@@ -174,6 +178,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
 // Logout user
 export const logout = (): void => {
     if (typeof window === "undefined") return;
+    localStorage.removeItem("web3khalti_session");
     localStorage.removeItem("web3khalti_password");
     // Keep session ID for account recovery
 };
