@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,8 @@ interface Message {
     isFromMe: boolean;
 }
 
-export default function ChatPage({ params }: { params: { id: string } }) {
+export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -72,7 +73,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
 
     const loadMessages = async () => {
         try {
-            const result = await getChatMessages(params.id);
+            const result = await getChatMessages(id);
             if (result.error) {
                 console.error("Failed to load messages:", result.error);
                 return;
@@ -96,10 +97,10 @@ export default function ChatPage({ params }: { params: { id: string } }) {
 
         try {
             // Sign the message with the private key
-            const signature = signMessage(newMessage, currentWallet.privateKey);
+            const signature = await signMessage(newMessage, currentWallet.privateKey, currentWallet.type);
 
             const result = await sendMessageAction(
-                params.id,
+                id,
                 newMessage,
                 currentWallet.id,
                 recipientPublicKey,

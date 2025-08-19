@@ -80,6 +80,11 @@ export default function Home() {
 		setIsCreatingAccount(true);
 		try {
 			const result = await createAccount(password);
+			if(!result.masterSeed) {
+				toast.error("Failed to create account");
+				return;
+			}
+
 			setGeneratedSeed(result.masterSeed);
 			setShowSeed(true);
 			toast.success("Account created successfully! Please save your seed phrase.");
@@ -257,7 +262,7 @@ export default function Home() {
 
 								{!showSeed ? (
 									<div className="space-y-4">
-										<div>
+										<div className="space-y-2">
 											<Label htmlFor="password">Password</Label>
 											<Input
 												id="password"
@@ -267,7 +272,7 @@ export default function Home() {
 												onChange={(e) => setPassword(e.target.value)}
 											/>
 										</div>
-										<div>
+										<div className="space-y-2">
 											<Label htmlFor="confirmPassword">Confirm Password</Label>
 											<Input
 												id="confirmPassword"
@@ -405,7 +410,7 @@ export default function Home() {
 	// Main authenticated dashboard
 	return (
 		<section className="min-h-screen flex flex-col bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200 px-3 py-6 sm:p-4 lg:p-6">
-			<div className="max-w-7xl mx-auto w-full">
+			<div className="max-w-7xl mx-auto w-full pt-20">
 				<div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 gap-4">
 					<div>
 						<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Web3 Khalti Dashboard</h1>

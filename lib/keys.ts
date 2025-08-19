@@ -22,11 +22,11 @@ export function assertMnemonic(mnemonic: string) {
 const SOLANA_PATH = `m/44'/501'/0'/0'`;
 
 /** Derive Solana keypair (Ed25519) from mnemonic using noble + micro-ed25519-hdkey */
-export async function deriveSolanaFromMnemonic(mnemonic: string) {
+export async function deriveSolanaFromMnemonic(mnemonic: string, customPath?: string) {
     assertMnemonic(mnemonic);
     const seed = await bip39.mnemonicToSeedSync(mnemonic); // 64 bytes
     const hd = HDKey.fromMasterSeed(seed);
-    const child = hd.derive(SOLANA_PATH);
+    const child = hd.derive(customPath || SOLANA_PATH);
 
     if (!child.privateKey) throw new Error("No private key derived");
     const privKey = child.privateKey;                 // 32-byte seed for ed25519
@@ -60,13 +60,13 @@ export async function solanaVerify(
 const ETH_PATH = `m/44'/60'/0'/0/0`;
 
 /** Derive Ethereum wallet (secp256k1) from mnemonic using ethers v6 */
-export function deriveEthereumFromMnemonic(mnemonic: string) {
+export function deriveEthereumFromMnemonic(mnemonic: string, customPath?: string) {
     assertMnemonic(mnemonic);
 
     // ethers can create from mnemonic directly, but to mirror flow we go seed -> HD
     const seed = Mnemonic.fromPhrase(mnemonic).computeSeed(); // Uint8Array
     const root = HDNodeWallet.fromSeed(seed);
-    const wallet = root.derivePath(ETH_PATH);
+    const wallet = root.derivePath(customPath || ETH_PATH);
 
     // wallet.privateKey: 0x-prefixed hex; wallet.publicKey is uncompressed 0x04...
     return {
