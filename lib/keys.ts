@@ -1,6 +1,6 @@
 // keys.ts
 import * as bip39 from "bip39";
-import { HDKey } from "micro-ed25519-hdkey";           // SLIP-0010 (Ed25519)
+import { HDKey } from "micro-ed25519-hdkey";
 import * as ed from "@noble/ed25519";
 import bs58 from "bs58";
 import { HDNodeWallet, Mnemonic } from "ethers";
