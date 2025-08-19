@@ -126,7 +126,7 @@ export const isLoggedIn = (): boolean => {
     return !!localStorage.getItem("web3khalti_session") && !!localStorage.getItem("web3khalti_password");
 };
 
-// Get or create user session (legacy - to be replaced)
+// Get or create user session (legacy - used only for wallet connection flow)
 export const getOrCreateUserSession = async (): Promise<{ user: User; isNewUser: boolean }> => {
     if (typeof window === "undefined") {
         throw new Error("This function can only be called on the client side");
@@ -147,6 +147,7 @@ export const getOrCreateUserSession = async (): Promise<{ user: User; isNewUser:
             throw new Error("Please create an account first");
         }
 
+        // Always return isNewUser as false since this is only called for existing authenticated users
         return { user: userResult.user!, isNewUser: false };
     } catch (error) {
         console.error("Error managing user session:", error);
@@ -178,9 +179,8 @@ export const getCurrentUser = async (): Promise<User | null> => {
 // Logout user
 export const logout = (): void => {
     if (typeof window === "undefined") return;
-    localStorage.removeItem("web3khalti_session");
     localStorage.removeItem("web3khalti_password");
-    // Keep session ID for account recovery
+    // Keep session ID for account recovery - user can log back in
 };
 
 // Verify seed phrase
@@ -297,4 +297,16 @@ export const verifySignature = (message: string, signature: string, publicKey: s
     // This is a placeholder. In a real implementation, you'd verify the signature
     // using the appropriate crypto library for the blockchain
     return signature.includes(message) && signature.includes(publicKey.substring(0, 10));
+};
+
+// Authentication helper functions - optimized for components using AuthProvider
+export const getAuthenticationStatus = () => {
+    if (typeof window === "undefined") {
+        return { hasAccount: false, isAuthenticated: false };
+    }
+    
+    return {
+        hasAccount: accountExists(),
+        isAuthenticated: isLoggedIn()
+    };
 };
