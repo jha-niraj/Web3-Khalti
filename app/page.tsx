@@ -304,7 +304,7 @@ export default function Home() {
 											</p>
 										</div>
 										
-										<div className="grid grid-cols-3 gap-2">
+										<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
 											{generatedSeed.split(" ").map((word, index) => (
 												<div 
 													key={index} 
@@ -404,19 +404,19 @@ export default function Home() {
 
 	// Main authenticated dashboard
 	return (
-		<section className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200 p-4">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="flex justify-between items-center mb-8">
+		<section className="min-h-screen flex flex-col bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200 px-3 py-6 sm:p-4 lg:p-6">
+			<div className="max-w-7xl mx-auto w-full">
+				<div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 gap-4">
 					<div>
-						<h1 className="text-4xl font-bold">Web3 Khalti Dashboard</h1>
-						<p className="text-lg text-gray-600 dark:text-gray-400">
+						<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Web3 Khalti Dashboard</h1>
+						<p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-400">
 							Manage your wallets and secure messaging
 						</p>
 					</div>
 					<Button 
 						variant="outline" 
 						onClick={handleLogout}
-						className="flex items-center gap-2"
+						className="flex items-center gap-2 self-start sm:self-auto"
 					>
 						<LogOut className="h-4 w-4" />
 						Logout
@@ -424,10 +424,10 @@ export default function Home() {
 				</div>
 				
 				{/* Action Buttons */}
-				<div className="flex justify-center space-x-4 mb-8">
+				<div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8">
 					<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
 						<DialogTrigger asChild>
-							<Button className="cursor-pointer">
+							<Button className="cursor-pointer flex items-center justify-center">
 								<Plus className="mr-2 h-4 w-4" />
 								Create Wallet
 							</Button>
@@ -478,7 +478,7 @@ export default function Home() {
 					{wallets.length > 0 && (
 						<Dialog open={isChatDialogOpen} onOpenChange={setIsChatDialogOpen}>
 							<DialogTrigger asChild>
-								<Button variant="outline" className="cursor-pointer">
+								<Button variant="outline" className="cursor-pointer flex items-center justify-center">
 									<MessageCircle className="mr-2 h-4 w-4" />
 									Start Chat
 								</Button>
@@ -546,13 +546,13 @@ export default function Home() {
 				{/* Wallets Display */}
 				{wallets.length > 0 ? (
 					<div className="space-y-6">
-						<h2 className="text-2xl font-bold text-center">Your Wallets</h2>
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						<h2 className="text-xl sm:text-2xl font-bold text-center">Your Wallets</h2>
+						<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
 							{wallets.map((wallet) => (
-								<div key={wallet.id} className="bg-gray-100 dark:bg-neutral-800 p-6 rounded-lg">
-									<div className="flex items-center justify-between mb-4">
-										<h3 className="font-semibold text-lg">{wallet.name}</h3>
-										<div className="flex items-center gap-2">
+								<div key={wallet.id} className="bg-gray-100 dark:bg-neutral-800 p-4 sm:p-6 rounded-lg">
+									<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+										<h3 className="font-semibold text-base sm:text-lg">{wallet.name}</h3>
+										<div className="flex items-center gap-2 self-start sm:self-auto">
 											<span className={`text-xs px-2 py-1 rounded ${
 												wallet.type === "ETHEREUM" 
 													? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" 

@@ -102,49 +102,50 @@ export default function SolanaPage() {
     return (
         <section className="min-h-screen bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200 p-4">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-3xl font-bold text-center mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">
                     Your Solana Wallets
                 </h1>
 
                 {user && (
                     <div className="mb-8">
-                        <h2 className="text-2xl font-semibold mb-4">Your Seed Phrase</h2>
+                        <h2 className="text-xl sm:text-2xl font-semibold mb-4">Your Seed Phrase</h2>
                         <div
-                            className="grid grid-cols-3 gap-4 bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg cursor-pointer"
+                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 bg-gray-100 dark:bg-neutral-800 p-3 sm:p-4 rounded-lg cursor-pointer"
                             onClick={() => handleCopy(user.masterSeed, "Seed phrase")}
                         >
                             {user.masterSeed.split(" ").map((word: string, index: number) => (
                                 <span
                                     key={index}
-                                    className="bg-white dark:bg-neutral-700 p-2 rounded text-center hover:bg-gray-50 dark:hover:bg-neutral-600 transition-colors"
+                                    className="bg-white dark:bg-neutral-700 p-2 rounded text-center hover:bg-gray-50 dark:hover:bg-neutral-600 transition-colors text-sm"
                                 >
                                     {index + 1}. {word}
                                 </span>
                             ))}
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
                             Click to copy seed phrase
                         </p>
                     </div>
                 )}
 
                 {/* Create New Wallet */}
-                <div className="mb-8 bg-gray-100 dark:bg-neutral-800 p-6 rounded-lg">
-                    <h3 className="text-xl font-semibold mb-4">Create New Solana Wallet</h3>
-                    <div className="flex gap-4">
+                <div className="mb-6 sm:mb-8 bg-gray-100 dark:bg-neutral-800 p-4 sm:p-6 rounded-lg">
+                    <h3 className="text-lg sm:text-xl font-semibold mb-4">Create New Solana Wallet</h3>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                         <input
                             type="text"
                             placeholder="Enter wallet name"
                             value={walletName}
                             onChange={(e) => setWalletName(e.target.value)}
-                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700"
+                            className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-sm sm:text-base"
                         />
                         <Button
                             onClick={handleCreateWallet}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 justify-center"
                         >
                             <Plus className="h-4 w-4" />
-                            Create Wallet
+                            <span className="hidden sm:inline">Create Wallet</span>
+                            <span className="sm:hidden">Create</span>
                         </Button>
                     </div>
                 </div>
@@ -159,15 +160,15 @@ export default function SolanaPage() {
                         wallets.map((wallet) => (
                             <div
                                 key={wallet.id}
-                                className="bg-gray-100 dark:bg-neutral-800 p-6 rounded-lg"
+                                className="bg-gray-100 dark:bg-neutral-800 p-4 sm:p-6 rounded-lg"
                             >
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xl font-semibold">{wallet.name}</h3>
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+                                    <h3 className="text-lg sm:text-xl font-semibold">{wallet.name}</h3>
                                     <Button
                                         onClick={() => handleDeleteWallet(wallet.id)}
                                         variant="destructive"
                                         size="sm"
-                                        className="flex items-center gap-2"
+                                        className="flex items-center gap-2 self-start sm:self-auto"
                                     >
                                         <Trash className="h-4 w-4" />
                                         Delete
@@ -176,13 +177,14 @@ export default function SolanaPage() {
 
                                 <div className="space-y-4">
                                     <div>
-                                        <h4 className="text-lg font-medium mb-2">Public Key</h4>
-                                        <div className="flex items-center justify-between bg-white dark:bg-neutral-700 p-4 rounded border">
-                                            <p className="truncate mr-4">{wallet.publicKey}</p>
+                                        <h4 className="text-base sm:text-lg font-medium mb-2">Public Key</h4>
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-neutral-700 p-3 sm:p-4 rounded border gap-3">
+                                            <p className="truncate text-sm sm:text-base font-mono break-all">{wallet.publicKey}</p>
                                             <Button
                                                 onClick={() => handleCopy(wallet.publicKey, "Public key")}
                                                 size="sm"
                                                 variant="outline"
+                                                className="flex-shrink-0"
                                             >
                                                 <Copy className="h-4 w-4" />
                                             </Button>
@@ -190,12 +192,12 @@ export default function SolanaPage() {
                                     </div>
 
                                     <div>
-                                        <h4 className="text-lg font-medium mb-2">Private Key</h4>
-                                        <div className="flex items-center justify-between bg-white dark:bg-neutral-700 p-4 rounded border">
-                                            <p className="truncate mr-4">
+                                        <h4 className="text-base sm:text-lg font-medium mb-2">Private Key</h4>
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-neutral-700 p-3 sm:p-4 rounded border gap-3">
+                                            <p className="truncate text-sm sm:text-base font-mono break-all">
                                                 {isPrivateKeyVisible[wallet.id] ? wallet.privateKey : "••••••••••••••••••••"}
                                             </p>
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 flex-shrink-0">
                                                 <Button
                                                     onClick={() => togglePrivateKeyVisibility(wallet.id)}
                                                     size="sm"
