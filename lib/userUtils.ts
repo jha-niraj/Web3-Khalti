@@ -181,38 +181,9 @@ export const loginWithSeedPhrase = async (seedPhrase: string, newPassword: strin
     }
 };
 
-// Reset password with seed phrase verification
-export const resetPasswordWithSeed = async (newPassword: string, seedWords: string[]): Promise<void> => {
-    if (typeof window === "undefined") {
-        throw new Error("This function can only be called on the client side");
-    }
-
-    try {
-        const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-        if (!userData) {
-            throw new Error("No account found");
-        }
-
-        const user: User = JSON.parse(userData);
-        const seedPhrase = seedWords.join(" ");
-
-        // Verify seed phrase matches
-        if (user.masterSeed !== seedPhrase) {
-            throw new Error("Invalid seed phrase");
-        }
-
-        // Update password
-        const passwordHash = await bcrypt.hash(newPassword, 10);
-        user.passwordHash = passwordHash;
-        user.updatedAt = new Date();
-
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
-        localStorage.setItem(STORAGE_KEYS.PASSWORD, newPassword);
-    } catch (error) {
-        console.error("Error resetting password:", error);
-        throw error;
-    }
-};
+// Note: Password reset is now handled through loginWithSeedPhrase function in the UI.
+// Users must re-enter their seed phrase to restore their wallet with a new password.
+// This approach is more secure for a localStorage-based system.
 
 // Check if account exists
 export const accountExists = (): boolean => {

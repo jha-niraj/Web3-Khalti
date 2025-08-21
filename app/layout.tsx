@@ -2,11 +2,11 @@ import Navbar from "@/components/(landingpage)/navbar";
 import "./globals.css";
 import { ThemeProvider } from "@/components/themeproviders";
 import { AuthProvider } from "@/components/auth-provider";
-import { Geist, Geist_Mono, Poppins, Space_Grotesk } from "next/font/google";
+import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import Footer from "@/components/(landingpage)/footer";
 import { Toaster as SonnerToaster } from "sonner";
+import { Metadata } from "next";
 
-const poppins = Poppins({ subsets: ["latin"], weight: "300" });
 const geistSans = Geist({
 	variable: "--font-geist-sans",
 	subsets: ["latin"],
@@ -21,6 +21,11 @@ const geistMono = Geist_Mono({
 	variable: "--font-geist-mono",
 	subsets: ["latin"],
 });
+
+export const metadata: Metadata = {
+	title: "Web3Khalti",
+	description: "Web3 version of the Khalti app",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (

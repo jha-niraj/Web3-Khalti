@@ -30,6 +30,14 @@ const Navbar = () => {
 	const [isSeedImportDialogOpen, setIsSeedImportDialogOpen] = useState(false);
 	const [importSeedPhrase, setImportSeedPhrase] = useState("");
 	const [importPassword, setImportPassword] = useState("");
+	// New verification dialog for new users
+	const [isSeedVerificationDialogOpen, setIsSeedVerificationDialogOpen] = useState(false);
+	const [verificationInputs, setVerificationInputs] = useState<string[]>(["", "", ""]); // 4th, 7th, 10th words
+	const [savedSeedForVerification, setSavedSeedForVerification] = useState<string>("");
+	// Password reset dialog
+	const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
+	const [resetSeedPhrase, setResetSeedPhrase] = useState("");
+	const [newPasswordAfterReset, setNewPasswordAfterReset] = useState("");
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -104,8 +112,10 @@ const Navbar = () => {
 	};
 
 	const handleNewUserComplete = async () => {
+		// Instead of directly completing, open verification dialog
+		setSavedSeedForVerification(userSeed);
 		setIsConnectDialogOpen(false);
-		await refreshAuth();
+		setIsSeedVerificationDialogOpen(true);
 	};
 
 	const handleSeedImport = async () => {
@@ -149,6 +159,82 @@ const Navbar = () => {
 		setIsSeedImportDialogOpen(false);
 		setImportSeedPhrase("");
 		setImportPassword("");
+	};
+
+	const handleSeedVerification = async () => {
+		if (!verificationInputs[0] || !verificationInputs[1] || !verificationInputs[2]) {
+			toast.error("Please fill in all verification words");
+			return;
+		}
+
+		const seedWordsArray = savedSeedForVerification.split(" ");
+		const fourthWord = seedWordsArray[3]; // 4th word (index 3)
+		const seventhWord = seedWordsArray[6]; // 7th word (index 6)
+		const tenthWord = seedWordsArray[9]; // 10th word (index 9)
+
+		if (
+			verificationInputs[0].toLowerCase().trim() === fourthWord.toLowerCase() &&
+			verificationInputs[1].toLowerCase().trim() === seventhWord.toLowerCase() &&
+			verificationInputs[2].toLowerCase().trim() === tenthWord.toLowerCase()
+		) {
+			toast.success("Seed phrase verified successfully! You can now access your wallet.");
+			setIsSeedVerificationDialogOpen(false);
+			setVerificationInputs(["", "", ""]);
+			setSavedSeedForVerification("");
+			await refreshAuth();
+		} else {
+			toast.error("Verification failed. Please check your seed phrase and try again.");
+			setVerificationInputs(["", "", ""]);
+		}
+	};
+
+	const handleSeedVerificationDialogClose = () => {
+		setIsSeedVerificationDialogOpen(false);
+		setVerificationInputs(["", "", ""]);
+		setSavedSeedForVerification("");
+	};
+
+	const handlePasswordReset = async () => {
+		try {
+			if (!resetSeedPhrase.trim() || !newPasswordAfterReset.trim()) {
+				toast.error("Please enter both seed phrase and new password");
+				return;
+			}
+
+			// Validate seed phrase format (should be 12 words)
+			const seedWords = resetSeedPhrase.trim().split(/\s+/);
+			if (seedWords.length !== 12) {
+				toast.error("Seed phrase must be exactly 12 words");
+				return;
+			}
+
+			if (newPasswordAfterReset.length < 6) {
+				toast.error("Password must be at least 6 characters long");
+				return;
+			}
+
+			const result = await loginWithSeedPhrase(resetSeedPhrase.trim(), newPasswordAfterReset);
+
+			if (result.error) {
+				toast.error(result.error);
+				return;
+			}
+
+			toast.success("Password reset successful! Your wallet has been restored with all associated wallets.");
+			setIsPasswordResetDialogOpen(false);
+			setResetSeedPhrase("");
+			setNewPasswordAfterReset("");
+			await refreshAuth();
+		} catch (error) {
+			console.error("Error resetting password:", error);
+			toast.error("Failed to reset password. Please check your seed phrase.");
+		}
+	};
+
+	const handlePasswordResetDialogClose = () => {
+		setIsPasswordResetDialogOpen(false);
+		setResetSeedPhrase("");
+		setNewPasswordAfterReset("");
 	};
 
 	const closeMobileMenu = () => {
@@ -199,7 +285,7 @@ const Navbar = () => {
 								</Button>
 							</div>
 						) : !isAuthenticated ? (
-							// Account exists but not authenticated - show sign in and import options
+							// Account exists but not authenticated - show sign in, import, and forgot password options
 							<div className="flex items-center gap-2">
 								<Link href="/">
 									<Button
@@ -220,6 +306,14 @@ const Navbar = () => {
 									<Key className="h-4 w-4" />
 									Import Seed
 								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setIsPasswordResetDialogOpen(true)}
+									className="flex items-center gap-2 text-red-600 hover:text-red-700"
+								>
+									Forgot Password?
+								</Button>
 							</div>
 						) : (
 							// Authenticated - show connect wallet and logout
@@ -228,7 +322,7 @@ const Navbar = () => {
 									<DialogTrigger asChild>
 										<Button
 											variant="outline"
-											size="sm"
+										size="sm"
 											onClick={handleConnectWallet}
 											className="flex items-center gap-2"
 										>
@@ -427,7 +521,7 @@ const Navbar = () => {
 										</Button>
 									</div>
 								) : !isAuthenticated ? (
-									// Account exists but not authenticated - show sign in and import options
+									// Account exists but not authenticated - show sign in, import, and forgot password options
 									<div className="space-y-3">
 										<Link href="/" onClick={closeMobileMenu}>
 											<Button
@@ -450,6 +544,17 @@ const Navbar = () => {
 										>
 											<Key className="h-4 w-4" />
 											Import Seed
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => {
+												setIsPasswordResetDialogOpen(true);
+												setIsMobileMenuOpen(false);
+											}}
+											className="w-full flex items-center gap-2 justify-center text-red-600 hover:text-red-700"
+										>
+											Forgot Password?
 										</Button>
 									</div>
 								) : (
@@ -525,6 +630,111 @@ const Navbar = () => {
 							disabled={!importSeedPhrase.trim() || !importPassword.trim()}
 						>
 							Import Wallet
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			{/* Seed Verification Dialog for New Users */}
+			<Dialog open={isSeedVerificationDialogOpen} onOpenChange={handleSeedVerificationDialogClose}>
+				<DialogContent className="sm:max-w-[500px]">
+					<DialogHeader>
+						<DialogTitle>Verify Your Seed Phrase</DialogTitle>
+						<DialogDescription>
+							To ensure you've saved your seed phrase correctly, please enter the following words:
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+							<p className="text-sm text-blue-700 dark:text-blue-300">
+								This verification ensures that you have properly saved your seed phrase. Without it, you won't be able to recover your wallet.
+							</p>
+						</div>
+						<div className="space-y-3">
+							<div>
+								<Label htmlFor="verification4th">4th word</Label>
+								<Input
+									id="verification4th"
+									value={verificationInputs[0]}
+									onChange={(e) => setVerificationInputs([e.target.value, verificationInputs[1], verificationInputs[2]])}
+									placeholder="Enter the 4th word"
+								/>
+							</div>
+							<div>
+								<Label htmlFor="verification7th">7th word</Label>
+								<Input
+									id="verification7th"
+									value={verificationInputs[1]}
+									onChange={(e) => setVerificationInputs([verificationInputs[0], e.target.value, verificationInputs[2]])}
+									placeholder="Enter the 7th word"
+								/>
+							</div>
+							<div>
+								<Label htmlFor="verification10th">10th word</Label>
+								<Input
+									id="verification10th"
+									value={verificationInputs[2]}
+									onChange={(e) => setVerificationInputs([verificationInputs[0], verificationInputs[1], e.target.value])}
+									placeholder="Enter the 10th word"
+								/>
+							</div>
+						</div>
+						<Button
+							onClick={handleSeedVerification}
+							className="w-full"
+							disabled={!verificationInputs[0] || !verificationInputs[1] || !verificationInputs[2]}
+						>
+							Verify and Complete Setup
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			{/* Password Reset Dialog */}
+			<Dialog open={isPasswordResetDialogOpen} onOpenChange={handlePasswordResetDialogClose}>
+				<DialogContent className="sm:max-w-[500px]">
+					<DialogHeader>
+						<DialogTitle>Reset Your Password</DialogTitle>
+						<DialogDescription>
+							Since your data is stored locally, we cannot recover your password. You'll need to restore your wallet using your seed phrase.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+							<h4 className="font-semibold text-red-800 dark:text-red-200 mb-2">
+								⚠️ Important: Local Storage Notice
+							</h4>
+							<p className="text-sm text-red-700 dark:text-red-300">
+								We don't store your password or data on our servers. Everything is kept locally on your device for security. 
+								To reset your password, you must re-enter your seed phrase to restore your wallet.
+							</p>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="resetSeedPhrase">12-Word Seed Phrase</Label>
+							<textarea
+								id="resetSeedPhrase"
+								value={resetSeedPhrase}
+								onChange={(e) => setResetSeedPhrase(e.target.value)}
+								placeholder="Enter your 12-word seed phrase separated by spaces"
+								className="w-full p-3 border border-input rounded-lg min-h-[100px] font-mono text-sm bg-background"
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="newPasswordAfterReset">New Password</Label>
+							<Input
+								id="newPasswordAfterReset"
+								type="password"
+								value={newPasswordAfterReset}
+								onChange={(e) => setNewPasswordAfterReset(e.target.value)}
+								placeholder="Create a new password (min 6 characters)"
+							/>
+						</div>
+						<Button
+							onClick={handlePasswordReset}
+							className="w-full"
+							disabled={!resetSeedPhrase.trim() || !newPasswordAfterReset.trim()}
+						>
+							Reset Password & Restore Wallet
 						</Button>
 					</div>
 				</DialogContent>
