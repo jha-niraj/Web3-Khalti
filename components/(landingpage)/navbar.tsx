@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { Button } from "../ui/button"
-import { Moon, Sun, Wallet, LogIn, LogOut, UserPlus, Menu, X } from "lucide-react"
+import { Moon, Sun, Wallet, LogIn, LogOut, UserPlus, Menu, X, Key } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -12,7 +12,7 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { verifySeedPhrase, logout } from "@/lib/userUtils";
+import { verifySeedPhrase, logout, loginWithSeedPhrase } from "@/lib/userUtils";
 import { toast } from "sonner";
 import { useAuth } from "../auth-provider"
 
@@ -27,6 +27,9 @@ const Navbar = () => {
 	const [isVerified, setIsVerified] = useState(false);
 	const [isNewUser, setIsNewUser] = useState(false);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const [isSeedImportDialogOpen, setIsSeedImportDialogOpen] = useState(false);
+	const [importSeedPhrase, setImportSeedPhrase] = useState("");
+	const [importPassword, setImportPassword] = useState("");
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -105,6 +108,49 @@ const Navbar = () => {
 		await refreshAuth();
 	};
 
+	const handleSeedImport = async () => {
+		try {
+			if (!importSeedPhrase.trim() || !importPassword.trim()) {
+				toast.error("Please enter both seed phrase and password");
+				return;
+			}
+
+			// Validate seed phrase format (should be 12 words)
+			const seedWords = importSeedPhrase.trim().split(/\s+/);
+			if (seedWords.length !== 12) {
+				toast.error("Seed phrase must be exactly 12 words");
+				return;
+			}
+
+			if (importPassword.length < 6) {
+				toast.error("Password must be at least 6 characters long");
+				return;
+			}
+
+			const result = await loginWithSeedPhrase(importSeedPhrase.trim(), importPassword);
+
+			if (result.error) {
+				toast.error(result.error);
+				return;
+			}
+
+			toast.success("Successfully imported wallet! Please log in with your password.");
+			setIsSeedImportDialogOpen(false);
+			setImportSeedPhrase("");
+			setImportPassword("");
+			await refreshAuth();
+		} catch (error) {
+			console.error("Error importing seed phrase:", error);
+			toast.error("Failed to import seed phrase. Please check your seed phrase.");
+		}
+	};
+
+	const handleSeedImportDialogClose = () => {
+		setIsSeedImportDialogOpen(false);
+		setImportSeedPhrase("");
+		setImportPassword("");
+	};
+
 	const closeMobileMenu = () => {
 		setIsMobileMenuOpen(false);
 	};
@@ -132,29 +178,131 @@ const Navbar = () => {
 					{loading ? (
 						<div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
 					) : !hasAccount ? (
-						// No account exists - show sign up
-						<Link href="/">
-							<Button
-								variant="outline"
-								size="sm"
-								className="flex items-center gap-2"
-							>
-								<UserPlus className="h-4 w-4" />
-								Sign Up
-							</Button>
-						</Link>
+						// No account exists - show sign up and import options
+						<div className="flex items-center gap-2">
+							<Link href="/">
+								<Button
+									variant="outline"
+									size="sm"
+									className="flex items-center gap-2"
+								>
+									<UserPlus className="h-4 w-4" />
+									Sign Up
+								</Button>
+							</Link>
+							<Dialog open={isSeedImportDialogOpen} onOpenChange={handleSeedImportDialogClose}>
+								<DialogTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="flex items-center gap-2"
+									>
+										<Key className="h-4 w-4" />
+										Import Seed
+									</Button>
+								</DialogTrigger>
+								<DialogContent className="sm:max-w-[500px]">
+									<DialogHeader>
+										<DialogTitle>Import Existing Wallet</DialogTitle>
+										<DialogDescription>
+											Enter your 12-word seed phrase and create a new password to import your existing wallet.
+										</DialogDescription>
+									</DialogHeader>
+									<div className="space-y-4">
+										<div>
+											<Label htmlFor="seedPhrase">12-Word Seed Phrase</Label>
+											<textarea
+												id="seedPhrase"
+												value={importSeedPhrase}
+												onChange={(e) => setImportSeedPhrase(e.target.value)}
+												placeholder="Enter your 12-word seed phrase separated by spaces"
+												className="w-full p-3 border rounded-lg min-h-[100px] font-mono text-sm"
+											/>
+										</div>
+										<div>
+											<Label htmlFor="newPassword">New Password</Label>
+											<Input
+												id="newPassword"
+												type="password"
+												value={importPassword}
+												onChange={(e) => setImportPassword(e.target.value)}
+												placeholder="Create a new password (min 6 characters)"
+											/>
+										</div>
+										<Button
+											onClick={handleSeedImport}
+											className="w-full"
+											disabled={!importSeedPhrase.trim() || !importPassword.trim()}
+										>
+											Import Wallet
+										</Button>
+									</div>
+								</DialogContent>
+							</Dialog>
+						</div>
 					) : !isAuthenticated ? (
-						// Account exists but not authenticated - show sign in
-						<Link href="/">
-							<Button
-								variant="outline"
-								size="sm"
-								className="flex items-center gap-2"
-							>
-								<LogIn className="h-4 w-4" />
-								Sign In
-							</Button>
-						</Link>
+						// Account exists but not authenticated - show sign in and import options
+						<div className="flex items-center gap-2">
+							<Link href="/">
+								<Button
+									variant="outline"
+									size="sm"
+									className="flex items-center gap-2"
+								>
+									<LogIn className="h-4 w-4" />
+									Sign In
+								</Button>
+							</Link>
+							<Dialog open={isSeedImportDialogOpen} onOpenChange={handleSeedImportDialogClose}>
+								<DialogTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="flex items-center gap-2"
+									>
+										<Key className="h-4 w-4" />
+										Import Seed
+									</Button>
+								</DialogTrigger>
+								<DialogContent className="sm:max-w-[500px]">
+									<DialogHeader>
+										<DialogTitle>Import Existing Wallet</DialogTitle>
+										<DialogDescription>
+											Enter your 12-word seed phrase and create a new password to import your existing wallet.
+										</DialogDescription>
+									</DialogHeader>
+									<div className="space-y-4">
+										<div>
+											<Label htmlFor="seedPhrase">12-Word Seed Phrase</Label>
+											<textarea
+												id="seedPhrase"
+												value={importSeedPhrase}
+												onChange={(e) => setImportSeedPhrase(e.target.value)}
+												placeholder="Enter your 12-word seed phrase separated by spaces"
+												className="w-full p-3 border rounded-lg min-h-[100px] font-mono text-sm"
+											/>
+										</div>
+										<div>
+											<Label htmlFor="newPassword">New Password</Label>
+											<Input
+												id="newPassword"
+												type="password"
+												value={importPassword}
+												onChange={(e) => setImportPassword(e.target.value)}
+												placeholder="Create a new password (min 6 characters)"
+											/>
+										</div>
+										<Button
+											onClick={handleSeedImport}
+											className="w-full"
+											disabled={!importSeedPhrase.trim() || !importPassword.trim()}
+										>
+											Import Wallet
+										</Button>
+									</div>
+								</DialogContent>
+							</Dialog>
+						</div>
 					) : (
 						// Authenticated - show connect wallet and logout
 						<div className="flex items-center gap-2">
@@ -338,29 +486,57 @@ const Navbar = () => {
 						{loading ? (
 							<div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
 						) : !hasAccount ? (
-							// No account exists - show sign up
-							<Link href="/" onClick={closeMobileMenu}>
+							// No account exists - show sign up and import options
+							<div className="space-y-3">
+								<Link href="/" onClick={closeMobileMenu}>
+									<Button
+										variant="outline"
+										size="sm"
+										className="w-full flex items-center gap-2 justify-center"
+									>
+										<UserPlus className="h-4 w-4" />
+										Sign Up
+									</Button>
+								</Link>
 								<Button
-									variant="outline"
+									variant="ghost"
 									size="sm"
+									onClick={() => {
+										setIsSeedImportDialogOpen(true);
+										setIsMobileMenuOpen(false);
+									}}
 									className="w-full flex items-center gap-2 justify-center"
 								>
-									<UserPlus className="h-4 w-4" />
-									Sign Up
+									<Key className="h-4 w-4" />
+									Import Seed
 								</Button>
-							</Link>
+							</div>
 						) : !isAuthenticated ? (
-							// Account exists but not authenticated - show sign in
-							<Link href="/" onClick={closeMobileMenu}>
+							// Account exists but not authenticated - show sign in and import options
+							<div className="space-y-3">
+								<Link href="/" onClick={closeMobileMenu}>
+									<Button
+										variant="outline"
+										size="sm"
+										className="w-full flex items-center gap-2 justify-center"
+									>
+										<LogIn className="h-4 w-4" />
+										Sign In
+									</Button>
+								</Link>
 								<Button
-									variant="outline"
+									variant="ghost"
 									size="sm"
+									onClick={() => {
+										setIsSeedImportDialogOpen(true);
+										setIsMobileMenuOpen(false);
+									}}
 									className="w-full flex items-center gap-2 justify-center"
 								>
-									<LogIn className="h-4 w-4" />
-									Sign In
+									<Key className="h-4 w-4" />
+									Import Seed
 								</Button>
-							</Link>
+							</div>
 						) : (
 							// Authenticated - show connect wallet and logout
 							<div className="space-y-3">

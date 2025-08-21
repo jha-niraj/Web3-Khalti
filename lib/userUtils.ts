@@ -1,7 +1,6 @@
 import { generateMnemonic } from "bip39";
-import { createUser, getUserBySession, verifySeedPhrase as verifySeedAction, loginUser, resetPassword } from "@/actions/user.action";
-import { createWallet as createWalletAction, getUserWallets as getUserWalletsAction, deleteWallet as deleteWalletAction } from "@/actions/wallet.action";
-import { solanaSign } from "./keys";
+import { deriveSolanaFromMnemonic, deriveEthereumFromMnemonic, solanaSign, assertMnemonic } from "./keys";
+import bcrypt from "bcryptjs";
 
 export interface User {
     id: string;
@@ -21,43 +20,54 @@ export interface Wallet {
     derivationPath: string;
     userId: string;
     createdAt: Date;
-    updatedAt: Date;
 }
 
-// Create new account with password
+// LocalStorage keys
+const STORAGE_KEYS = {
+    USER_DATA: "web3khalti_user",
+    SESSION_ID: "web3khalti_session",
+    PASSWORD: "web3khalti_password",
+    WALLETS: "web3khalti_wallets",
+    ACCOUNT_EXISTS: "web3khalti_account_exists"
+};
+
+// Create account with seed phrase and password
 export const createAccount = async (password: string): Promise<{ user: User; masterSeed: string; sessionId: string; error: string | null }> => {
-    if (typeof window === "undefined") {
-        throw new Error("This function can only be called on the client side");
-    }
-
-    if (!password || password.length < 6) {
-        throw new Error("Password must be at least 6 characters long");
-    }
-
-    // Generate session ID and master seed
-    const sessionId = generateSessionId();
-    const masterSeed = generateMnemonic(128); // 12 words
-
     try {
-        const result = await createUser(sessionId, masterSeed, password);
-
-        if (result.error) {
-            localStorage.removeItem("web3khalti_session");
-            throw new Error(result.error);
+        if (typeof window === "undefined") {
+            throw new Error("This function can only be called on the client side");
         }
 
-        // Store session ID in localStorage
-        localStorage.setItem("web3khalti_session", sessionId);
-        localStorage.setItem("web3khalti_password", result?.user?.passwordHash || "");
+        // Check if account already exists
+        if (accountExists()) {
+            return { user: null as any, masterSeed: "", sessionId: "", error: "Account already exists" };
+        }
 
-        return { 
-            user: result.user!, 
-            masterSeed, sessionId,
-            error: null
+        // Generate new mnemonic and session
+        const masterSeed = generateMnemonic();
+        const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        const user: User = {
+            id: sessionId, // Using sessionId as user ID for simplicity
+            sessionId,
+            masterSeed,
+            passwordHash,
+            createdAt: new Date(),
+            updatedAt: new Date()
         };
+
+        // Store in localStorage
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+        localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId);
+        localStorage.setItem(STORAGE_KEYS.PASSWORD, password);
+        localStorage.setItem(STORAGE_KEYS.ACCOUNT_EXISTS, "true");
+        localStorage.setItem(STORAGE_KEYS.WALLETS, JSON.stringify([]));
+
+        return { user, masterSeed, sessionId, error: null };
     } catch (error) {
         console.error("Error creating account:", error);
-        throw error;
+        return { user: null as any, masterSeed: "", sessionId: "", error: "Failed to create account" };
     }
 };
 
@@ -67,25 +77,64 @@ export const loginWithPassword = async (password: string): Promise<User> => {
         throw new Error("This function can only be called on the client side");
     }
 
-    const sessionId = localStorage.getItem("web3khalti_session");
-    if (!sessionId) {
-        throw new Error("No account found. Please create an account first.");
-    }
-
     try {
-        const result = await loginUser(sessionId, password);
-
-        if (result.error) {
-            throw new Error(result.error);
+        const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+        if (!userData) {
+            throw new Error("No account found");
         }
 
-        // Store password for convenience
-        localStorage.setItem("web3khalti_password", password);
+        const user: User = JSON.parse(userData);
+        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
-        return result.user!;
+        if (!isPasswordValid) {
+            throw new Error("Invalid password");
+        }
+
+        // Update session
+        localStorage.setItem(STORAGE_KEYS.SESSION_ID, user.sessionId);
+        localStorage.setItem(STORAGE_KEYS.PASSWORD, password);
+
+        return user;
     } catch (error) {
         console.error("Error logging in:", error);
         throw error;
+    }
+};
+
+// Login with seed phrase (for existing users)
+export const loginWithSeedPhrase = async (seedPhrase: string, newPassword: string): Promise<{ user: User; sessionId: string; error: string | null }> => {
+    try {
+        if (typeof window === "undefined") {
+            throw new Error("This function can only be called on the client side");
+        }
+
+        // Validate the seed phrase
+        assertMnemonic(seedPhrase);
+
+        // Generate session ID
+        const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+
+        const user: User = {
+            id: sessionId,
+            sessionId,
+            masterSeed: seedPhrase,
+            passwordHash,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+
+        // Store in localStorage (this will overwrite any existing account)
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+        localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId);
+        localStorage.setItem(STORAGE_KEYS.PASSWORD, newPassword);
+        localStorage.setItem(STORAGE_KEYS.ACCOUNT_EXISTS, "true");
+        localStorage.setItem(STORAGE_KEYS.WALLETS, JSON.stringify([]));
+
+        return { user, sessionId, error: null };
+    } catch (error) {
+        console.error("Error logging in with seed phrase:", error);
+        return { user: null as any, sessionId: "", error: "Invalid seed phrase or failed to login" };
     }
 };
 
@@ -95,20 +144,27 @@ export const resetPasswordWithSeed = async (newPassword: string, seedWords: stri
         throw new Error("This function can only be called on the client side");
     }
 
-    const sessionId = localStorage.getItem("web3khalti_session");
-    if (!sessionId) {
-        throw new Error("No account found");
-    }
-
     try {
-        const result = await resetPassword(sessionId, newPassword, seedWords);
-
-        if (result.error) {
-            throw new Error(result.error);
+        const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+        if (!userData) {
+            throw new Error("No account found");
         }
 
-        // Update stored password
-        localStorage.setItem("web3khalti_password", newPassword);
+        const user: User = JSON.parse(userData);
+        const seedPhrase = seedWords.join(" ");
+
+        // Verify seed phrase matches
+        if (user.masterSeed !== seedPhrase) {
+            throw new Error("Invalid seed phrase");
+        }
+
+        // Update password
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        user.passwordHash = passwordHash;
+        user.updatedAt = new Date();
+
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+        localStorage.setItem(STORAGE_KEYS.PASSWORD, newPassword);
     } catch (error) {
         console.error("Error resetting password:", error);
         throw error;
@@ -118,107 +174,129 @@ export const resetPasswordWithSeed = async (newPassword: string, seedWords: stri
 // Check if account exists
 export const accountExists = (): boolean => {
     if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("web3khalti_session");
+    return localStorage.getItem(STORAGE_KEYS.ACCOUNT_EXISTS) === "true";
 };
 
 // Check if user is logged in
 export const isLoggedIn = (): boolean => {
     if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("web3khalti_session") && !!localStorage.getItem("web3khalti_password");
+    return !!localStorage.getItem(STORAGE_KEYS.SESSION_ID);
 };
 
-// Get or create user session (legacy - used only for wallet connection flow)
-export const getOrCreateUserSession = async (): Promise<{ user: User; isNewUser: boolean }> => {
-    if (typeof window === "undefined") {
-        throw new Error("This function can only be called on the client side");
-    }
-
-    let sessionId = localStorage.getItem("web3khalti_session");
-
-    if (!sessionId) {
-        throw new Error("No user session found. Please create an account first or Login In");
-    }
-
-    try {
-        // Try to find existing user
-        const userResult = await getUserBySession(sessionId);
-
-        if (userResult.error) {
-            // Create new user - this should not happen with new flow
-            throw new Error("Please create an account first");
-        }
-
-        // Always return isNewUser as false since this is only called for existing authenticated users
-        return { user: userResult.user!, isNewUser: false };
-    } catch (error) {
-        console.error("Error managing user session:", error);
-        throw error;
-    }
-};
-
-// Check if user is connected (has session and is logged in)
-export const isUserConnected = (): boolean => {
-    return isLoggedIn();
-};
-
-// Get current user if connected
+// Get current user
 export const getCurrentUser = async (): Promise<User | null> => {
     if (typeof window === "undefined") return null;
 
-    const sessionId = localStorage.getItem("web3khalti_session");
-    if (!sessionId) return null;
-
     try {
-        const userResult = await getUserBySession(sessionId);
-        return userResult.error ? null : userResult.user!;
+        const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+        const sessionId = localStorage.getItem(STORAGE_KEYS.SESSION_ID);
+
+        if (!userData || !sessionId) {
+            return null;
+        }
+
+        const user: User = JSON.parse(userData);
+        if (user.sessionId !== sessionId) {
+            return null;
+        }
+
+        return user;
     } catch (error) {
         console.error("Error getting current user:", error);
         return null;
     }
 };
 
+// Check if user is connected (has valid session)
+export const isUserConnected = (): boolean => {
+    if (typeof window === "undefined") return false;
+    const sessionId = localStorage.getItem(STORAGE_KEYS.SESSION_ID);
+    const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+    return !!(sessionId && userData);
+};
+
 // Logout user
 export const logout = (): void => {
     if (typeof window === "undefined") return;
-    localStorage.removeItem("web3khalti_password");
-    // Keep session ID for account recovery - user can log back in
+    localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+    localStorage.removeItem(STORAGE_KEYS.PASSWORD);
+};
+
+// Clear all data (complete logout)
+export const clearAllData = (): void => {
+    if (typeof window === "undefined") return;
+    Object.values(STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+    });
 };
 
 // Verify seed phrase
 export const verifySeedPhrase = async (seedPhrase: string[]): Promise<boolean> => {
     if (typeof window === "undefined") return false;
 
-    const sessionId = localStorage.getItem("web3khalti_session");
-    if (!sessionId) return false;
-
     try {
-        const result = await verifySeedAction(sessionId, seedPhrase.join(" "));
-        return result.valid || false;
+        const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+        if (!userData) return false;
+
+        const user: User = JSON.parse(userData);
+        const providedSeed = seedPhrase.join(" ");
+
+        return user.masterSeed === providedSeed;
     } catch (error) {
         console.error("Error verifying seed phrase:", error);
         return false;
     }
 };
 
-// Create new wallet
+// Create wallet
 export const createWallet = async (name: string, type: "ETHEREUM" | "SOLANA"): Promise<Wallet> => {
     if (typeof window === "undefined") {
         throw new Error("This function can only be called on the client side");
     }
 
-    const sessionId = localStorage.getItem("web3khalti_session");
-    if (!sessionId) {
-        throw new Error("No user session found");
-    }
-
     try {
-        const result = await createWalletAction(sessionId, name, type);
-
-        if (result.error) {
-            throw new Error(result.error);
+        const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+        if (!userData) {
+            throw new Error("No user found");
         }
 
-        return result.wallet!;
+        const user: User = JSON.parse(userData);
+        const walletsData = localStorage.getItem(STORAGE_KEYS.WALLETS);
+        const existingWallets: Wallet[] = walletsData ? JSON.parse(walletsData) : [];
+
+        // Generate wallet keys from master seed
+        const walletIndex = existingWallets.length;
+        const derivationPath = `m/44'/${type === "ETHEREUM" ? "60" : "501"}'/${walletIndex}'/0/0`;
+
+        let publicKey: string;
+        let privateKey: string;
+
+        if (type === "ETHEREUM") {
+            const ethWallet = deriveEthereumFromMnemonic(user.masterSeed, derivationPath);
+            publicKey = ethWallet.address;
+            privateKey = ethWallet.privateKeyHex0x;
+        } else {
+            const solWallet = await deriveSolanaFromMnemonic(user.masterSeed, derivationPath);
+            publicKey = solWallet.publicKeyBase58;
+            privateKey = solWallet.privateKeyHex;
+        }
+
+        const wallet: Wallet = {
+            id: Math.random().toString(36).substring(2, 15),
+            name,
+            type,
+            publicKey,
+            privateKey,
+            derivationPath,
+            userId: user.id,
+            createdAt: new Date()
+        };
+
+        // Save wallet to localStorage
+        const updatedWallets = [...existingWallets, wallet];
+        localStorage.setItem(STORAGE_KEYS.WALLETS, JSON.stringify(updatedWallets));
+
+        return wallet;
     } catch (error) {
         console.error("Error creating wallet:", error);
         throw error;
@@ -229,12 +307,12 @@ export const createWallet = async (name: string, type: "ETHEREUM" | "SOLANA"): P
 export const getUserWallets = async (): Promise<Wallet[]> => {
     if (typeof window === "undefined") return [];
 
-    const sessionId = localStorage.getItem("web3khalti_session");
-    if (!sessionId) return [];
-
     try {
-        const result = await getUserWalletsAction(sessionId);
-        return result.error ? [] : (result.wallets || []);
+        const walletsData = localStorage.getItem(STORAGE_KEYS.WALLETS);
+        if (!walletsData) return [];
+
+        const wallets: Wallet[] = JSON.parse(walletsData);
+        return wallets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (error) {
         console.error("Error fetching wallets:", error);
         return [];
@@ -247,39 +325,28 @@ export const deleteWallet = async (walletId: string): Promise<void> => {
         throw new Error("This function can only be called on the client side");
     }
 
-    const sessionId = localStorage.getItem("web3khalti_session");
-    if (!sessionId) {
-        throw new Error("No user session found");
-    }
-
     try {
-        const result = await deleteWalletAction(sessionId, walletId);
+        const walletsData = localStorage.getItem(STORAGE_KEYS.WALLETS);
+        if (!walletsData) return;
 
-        if (result.error) {
-            throw new Error(result.error);
-        }
+        const wallets: Wallet[] = JSON.parse(walletsData);
+        const updatedWallets = wallets.filter(wallet => wallet.id !== walletId);
+
+        localStorage.setItem(STORAGE_KEYS.WALLETS, JSON.stringify(updatedWallets));
     } catch (error) {
         console.error("Error deleting wallet:", error);
         throw error;
     }
 };
 
-// Disconnect wallet (clear session)
+// Disconnect wallet (same as logout for now)
 export const disconnectWallet = (): void => {
-    if (typeof window === "undefined") return;
-    localStorage.removeItem("web3khalti_session");
+    logout();
 };
 
-// Generate session ID
-const generateSessionId = (): string => {
-    return Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15) +
-        Date.now().toString(36);
-};
-
-// Utility functions for seed phrase display
+// Utility functions for seed phrase
 export const splitSeedPhrase = (seedPhrase: string): string[] => {
-    return seedPhrase.split(" ");
+    return seedPhrase.trim().split(/\s+/);
 };
 
 export const formatSeedPhraseForDisplay = (seedPhrase: string): { word: string; index: number }[] => {
@@ -319,14 +386,19 @@ export const verifySignature = async (message: string, signature: string, public
     }
 };
 
-// Authentication helper functions - optimized for components using AuthProvider
+// Get authentication status
 export const getAuthenticationStatus = () => {
     if (typeof window === "undefined") {
-        return { hasAccount: false, isAuthenticated: false };
+        return {
+            isAuthenticated: false,
+            hasAccount: false,
+            user: null
+        };
     }
-    
+
     return {
+        isAuthenticated: isLoggedIn(),
         hasAccount: accountExists(),
-        isAuthenticated: isLoggedIn()
+        user: null // Will be set by AuthProvider
     };
 };
