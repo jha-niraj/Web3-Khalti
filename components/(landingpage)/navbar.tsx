@@ -190,55 +190,15 @@ const Navbar = () => {
 									Sign Up
 								</Button>
 							</Link>
-							<Dialog open={isSeedImportDialogOpen} onOpenChange={handleSeedImportDialogClose}>
-								<DialogTrigger asChild>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="flex items-center gap-2"
-									>
-										<Key className="h-4 w-4" />
-										Import Seed
-									</Button>
-								</DialogTrigger>
-								<DialogContent className="sm:max-w-[500px]">
-									<DialogHeader>
-										<DialogTitle>Import Existing Wallet</DialogTitle>
-										<DialogDescription>
-											Enter your 12-word seed phrase and create a new password to import your existing wallet.
-										</DialogDescription>
-									</DialogHeader>
-									<div className="space-y-4">
-										<div>
-											<Label htmlFor="seedPhrase">12-Word Seed Phrase</Label>
-											<textarea
-												id="seedPhrase"
-												value={importSeedPhrase}
-												onChange={(e) => setImportSeedPhrase(e.target.value)}
-												placeholder="Enter your 12-word seed phrase separated by spaces"
-												className="w-full p-3 border rounded-lg min-h-[100px] font-mono text-sm"
-											/>
-										</div>
-										<div>
-											<Label htmlFor="newPassword">New Password</Label>
-											<Input
-												id="newPassword"
-												type="password"
-												value={importPassword}
-												onChange={(e) => setImportPassword(e.target.value)}
-												placeholder="Create a new password (min 6 characters)"
-											/>
-										</div>
-										<Button
-											onClick={handleSeedImport}
-											className="w-full"
-											disabled={!importSeedPhrase.trim() || !importPassword.trim()}
-										>
-											Import Wallet
-										</Button>
-									</div>
-								</DialogContent>
-							</Dialog>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setIsSeedImportDialogOpen(true)}
+								className="flex items-center gap-2"
+							>
+								<Key className="h-4 w-4" />
+								Import Seed
+							</Button>
 						</div>
 					) : !isAuthenticated ? (
 						// Account exists but not authenticated - show sign in and import options
@@ -253,55 +213,15 @@ const Navbar = () => {
 									Sign In
 								</Button>
 							</Link>
-							<Dialog open={isSeedImportDialogOpen} onOpenChange={handleSeedImportDialogClose}>
-								<DialogTrigger asChild>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="flex items-center gap-2"
-									>
-										<Key className="h-4 w-4" />
-										Import Seed
-									</Button>
-								</DialogTrigger>
-								<DialogContent className="sm:max-w-[500px]">
-									<DialogHeader>
-										<DialogTitle>Import Existing Wallet</DialogTitle>
-										<DialogDescription>
-											Enter your 12-word seed phrase and create a new password to import your existing wallet.
-										</DialogDescription>
-									</DialogHeader>
-									<div className="space-y-4">
-										<div>
-											<Label htmlFor="seedPhrase">12-Word Seed Phrase</Label>
-											<textarea
-												id="seedPhrase"
-												value={importSeedPhrase}
-												onChange={(e) => setImportSeedPhrase(e.target.value)}
-												placeholder="Enter your 12-word seed phrase separated by spaces"
-												className="w-full p-3 border rounded-lg min-h-[100px] font-mono text-sm"
-											/>
-										</div>
-										<div>
-											<Label htmlFor="newPassword">New Password</Label>
-											<Input
-												id="newPassword"
-												type="password"
-												value={importPassword}
-												onChange={(e) => setImportPassword(e.target.value)}
-												placeholder="Create a new password (min 6 characters)"
-											/>
-										</div>
-										<Button
-											onClick={handleSeedImport}
-											className="w-full"
-											disabled={!importSeedPhrase.trim() || !importPassword.trim()}
-										>
-											Import Wallet
-										</Button>
-									</div>
-								</DialogContent>
-							</Dialog>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setIsSeedImportDialogOpen(true)}
+								className="flex items-center gap-2"
+							>
+								<Key className="h-4 w-4" />
+								Import Seed
+							</Button>
 						</div>
 					) : (
 						// Authenticated - show connect wallet and logout
@@ -574,6 +494,47 @@ const Navbar = () => {
 					</div>
 				</div>
 			)}
+
+			{/* Import Seed Dialog - Single definition used by all Import Seed buttons */}
+			<Dialog open={isSeedImportDialogOpen} onOpenChange={handleSeedImportDialogClose}>
+				<DialogContent className="sm:max-w-[500px]">
+					<DialogHeader>
+						<DialogTitle>Import Existing Wallet</DialogTitle>
+						<DialogDescription>
+							Enter your 12-word seed phrase and create a new password to import your existing wallet.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div>
+							<Label htmlFor="importSeedPhrase">12-Word Seed Phrase</Label>
+							<textarea
+								id="importSeedPhrase"
+								value={importSeedPhrase}
+								onChange={(e) => setImportSeedPhrase(e.target.value)}
+								placeholder="Enter your 12-word seed phrase separated by spaces"
+								className="w-full p-3 border border-input rounded-lg min-h-[100px] font-mono text-sm bg-background"
+							/>
+						</div>
+						<div>
+							<Label htmlFor="importPassword">New Password</Label>
+							<Input
+								id="importPassword"
+								type="password"
+								value={importPassword}
+								onChange={(e) => setImportPassword(e.target.value)}
+								placeholder="Create a new password (min 6 characters)"
+							/>
+						</div>
+						<Button
+							onClick={handleSeedImport}
+							className="w-full"
+							disabled={!importSeedPhrase.trim() || !importPassword.trim()}
+						>
+							Import Wallet
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</nav>
 	)
 }
