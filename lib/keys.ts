@@ -24,7 +24,7 @@ const SOLANA_PATH = `m/44'/501'/0'/0'`;
 /** Derive Solana keypair (Ed25519) from mnemonic using noble + micro-ed25519-hdkey */
 export async function deriveSolanaFromMnemonic(mnemonic: string, customPath?: string) {
     assertMnemonic(mnemonic);
-    const seed = await bip39.mnemonicToSeedSync(mnemonic); // 64 bytes
+    const seed = bip39.mnemonicToSeedSync(mnemonic); // 64 bytes
     const hd = HDKey.fromMasterSeed(seed);
     const child = hd.derive(customPath || SOLANA_PATH);
 

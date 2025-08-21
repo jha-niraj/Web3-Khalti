@@ -134,7 +134,7 @@ const Navbar = () => {
 				return;
 			}
 
-			toast.success("Successfully imported wallet! Please log in with your password.");
+			toast.success("Successfully imported wallet! Your Ethereum and Solana wallets have been restored.");
 			setIsSeedImportDialogOpen(false);
 			setImportSeedPhrase("");
 			setImportPassword("");
@@ -171,182 +171,180 @@ const Navbar = () => {
 						<span className="ml-2 text-lg font-semibold sm:hidden">Web3</span>
 					</Link>
 				</div>
-
-				{/* Desktop Menu */}
 				<div className="hidden md:flex items-center gap-4">
-					{/* Authentication State */}
-					{loading ? (
-						<div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
-					) : !hasAccount ? (
-						// No account exists - show sign up and import options
-						<div className="flex items-center gap-2">
-							<Link href="/">
-								<Button
-									variant="outline"
-									size="sm"
-									className="flex items-center gap-2"
-								>
-									<UserPlus className="h-4 w-4" />
-									Sign Up
-								</Button>
-							</Link>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setIsSeedImportDialogOpen(true)}
-								className="flex items-center gap-2"
-							>
-								<Key className="h-4 w-4" />
-								Import Seed
-							</Button>
-						</div>
-					) : !isAuthenticated ? (
-						// Account exists but not authenticated - show sign in and import options
-						<div className="flex items-center gap-2">
-							<Link href="/">
-								<Button
-									variant="outline"
-									size="sm"
-									className="flex items-center gap-2"
-								>
-									<LogIn className="h-4 w-4" />
-									Sign In
-								</Button>
-							</Link>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setIsSeedImportDialogOpen(true)}
-								className="flex items-center gap-2"
-							>
-								<Key className="h-4 w-4" />
-								Import Seed
-							</Button>
-						</div>
-					) : (
-						// Authenticated - show connect wallet and logout
-						<div className="flex items-center gap-2">
-							<Dialog open={isConnectDialogOpen} onOpenChange={handleDialogClose}>
-								<DialogTrigger asChild>
+					{
+						loading ? (
+							<div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
+						) : !hasAccount ? (
+							// No account exists - show sign up and import options
+							<div className="flex items-center gap-2">
+								<Link href="/">
 									<Button
 										variant="outline"
 										size="sm"
-										onClick={handleConnectWallet}
 										className="flex items-center gap-2"
 									>
-										<Wallet className="h-4 w-4" />
-										Connect Wallet
+										<UserPlus className="h-4 w-4" />
+										Sign Up
 									</Button>
-								</DialogTrigger>
-								<DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-									<DialogHeader>
-										<DialogTitle>
-											{isNewUser ? "Welcome to Web3 Khalti!" : "Verify Your Identity"}
-										</DialogTitle>
-										<DialogDescription>
-											{isNewUser
-												? "Please save your seed phrase securely. You'll need it to access your wallet."
-												: "Please complete your seed phrase to verify your identity."
-											}
-										</DialogDescription>
-									</DialogHeader>
-									{
-										isNewUser ? (
-											<div className="space-y-4">
-												<div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-													<h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-														⚠️ Important: Save Your Seed Phrase
-													</h4>
-													<p className="text-sm text-yellow-700 dark:text-yellow-300">
-														This is your only way to recover your wallet. Write it down and store it safely!
-													</p>
-												</div>
-												<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-													{
-														seedWords.map((word, index) => (
-															<div
-																key={index}
-																className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-															>
-																<span className="text-xs sm:text-sm font-mono text-gray-500 w-4 sm:w-6">
-																	{index + 1}.
-																</span>
-																<span className="font-medium text-xs sm:text-sm">{word}</span>
-															</div>
-														))
-													}
-												</div>
-												<Button
-													onClick={handleNewUserComplete}
-													className="w-full"
-												>
-													I've Saved My Seed Phrase
-												</Button>
-											</div>
-										) : (
-											<div className="space-y-4">
-												<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-													{
-														seedWords.map((word, index) => (
-															<div
-																key={index}
-																className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-															>
-																<span className="text-xs sm:text-sm font-mono text-gray-500 w-4 sm:w-6">
-																	{index + 1}.
-																</span>
-																<span className="font-medium text-xs sm:text-sm">
-																	{index === 3 || index === 4 ? "___" : word}
-																</span>
-															</div>
-														))
-													}
-												</div>
-												<div className="space-y-3">
-													<div>
-														<Label htmlFor="word4">4th word</Label>
-														<Input
-															id="word4"
-															value={userInputs[0]}
-															onChange={(e) => setUserInputs([e.target.value, userInputs[1]])}
-															placeholder="Enter the 4th word"
-														/>
+								</Link>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setIsSeedImportDialogOpen(true)}
+									className="flex items-center gap-2"
+								>
+									<Key className="h-4 w-4" />
+									Import Seed
+								</Button>
+							</div>
+						) : !isAuthenticated ? (
+							// Account exists but not authenticated - show sign in and import options
+							<div className="flex items-center gap-2">
+								<Link href="/">
+									<Button
+										variant="outline"
+										size="sm"
+										className="flex items-center gap-2"
+									>
+										<LogIn className="h-4 w-4" />
+										Sign In
+									</Button>
+								</Link>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setIsSeedImportDialogOpen(true)}
+									className="flex items-center gap-2"
+								>
+									<Key className="h-4 w-4" />
+									Import Seed
+								</Button>
+							</div>
+						) : (
+							// Authenticated - show connect wallet and logout
+							<div className="flex items-center gap-2">
+								<Dialog open={isConnectDialogOpen} onOpenChange={handleDialogClose}>
+									<DialogTrigger asChild>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={handleConnectWallet}
+											className="flex items-center gap-2"
+										>
+											<Wallet className="h-4 w-4" />
+											Connect Wallet
+										</Button>
+									</DialogTrigger>
+									<DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+										<DialogHeader>
+											<DialogTitle>
+												{isNewUser ? "Welcome to Web3 Khalti!" : "Verify Your Identity"}
+											</DialogTitle>
+											<DialogDescription>
+												{
+													isNewUser
+														? "Please save your seed phrase securely. You'll need it to access your wallet."
+														: "Please complete your seed phrase to verify your identity."
+												}
+											</DialogDescription>
+										</DialogHeader>
+										{
+											isNewUser ? (
+												<div className="space-y-4">
+													<div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+														<h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+															⚠️ Important: Save Your Seed Phrase
+														</h4>
+														<p className="text-sm text-yellow-700 dark:text-yellow-300">
+															This is your only way to recover your wallet. Write it down and store it safely!
+														</p>
 													</div>
-													<div>
-														<Label htmlFor="word5">5th word</Label>
-														<Input
-															id="word5"
-															value={userInputs[1]}
-															onChange={(e) => setUserInputs([userInputs[0], e.target.value])}
-															placeholder="Enter the 5th word"
-														/>
+													<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+														{
+															seedWords.map((word, index) => (
+																<div
+																	key={index}
+																	className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+																>
+																	<span className="text-xs sm:text-sm font-mono text-gray-500 w-4 sm:w-6">
+																		{index + 1}.
+																	</span>
+																	<span className="font-medium text-xs sm:text-sm">{word}</span>
+																</div>
+															))
+														}
 													</div>
+													<Button
+														onClick={handleNewUserComplete}
+														className="w-full"
+													>
+														I've Saved My Seed Phrase
+													</Button>
 												</div>
-												<Button
-													onClick={handleVerifySeed}
-													className="w-full"
-													disabled={!userInputs[0] || !userInputs[1]}
-												>
-													Verify Seed Phrase
-												</Button>
-											</div>
-										)
-									}
-								</DialogContent>
-							</Dialog>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleLogout}
-								className="flex items-center gap-2"
-							>
-								<LogOut className="h-4 w-4" />
-								Logout
-							</Button>
-						</div>
-					)}
-
-					{/* Theme Toggle */}
+											) : (
+												<div className="space-y-4">
+													<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+														{
+															seedWords.map((word, index) => (
+																<div
+																	key={index}
+																	className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+																>
+																	<span className="text-xs sm:text-sm font-mono text-gray-500 w-4 sm:w-6">
+																		{index + 1}.
+																	</span>
+																	<span className="font-medium text-xs sm:text-sm">
+																		{index === 3 || index === 4 ? "___" : word}
+																	</span>
+																</div>
+															))
+														}
+													</div>
+													<div className="space-y-3">
+														<div>
+															<Label htmlFor="word4">4th word</Label>
+															<Input
+																id="word4"
+																value={userInputs[0]}
+																onChange={(e) => setUserInputs([e.target.value, userInputs[1]])}
+																placeholder="Enter the 4th word"
+															/>
+														</div>
+														<div>
+															<Label htmlFor="word5">5th word</Label>
+															<Input
+																id="word5"
+																value={userInputs[1]}
+																onChange={(e) => setUserInputs([userInputs[0], e.target.value])}
+																placeholder="Enter the 5th word"
+															/>
+														</div>
+													</div>
+													<Button
+														onClick={handleVerifySeed}
+														className="w-full"
+														disabled={!userInputs[0] || !userInputs[1]}
+													>
+														Verify Seed Phrase
+													</Button>
+												</div>
+											)
+										}
+									</DialogContent>
+								</Dialog>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleLogout}
+									className="flex items-center gap-2"
+								>
+									<LogOut className="h-4 w-4" />
+									Logout
+								</Button>
+							</div>
+						)
+					}
 					<div className="flex items-center bg-muted/50 rounded-xl p-1 border border-border/50">
 						<Button
 							variant="ghost"
@@ -366,10 +364,7 @@ const Navbar = () => {
 						</Button>
 					</div>
 				</div>
-
-				{/* Mobile Menu Button */}
 				<div className="flex md:hidden items-center gap-2">
-					{/* Theme Toggle for Mobile */}
 					<div className="flex items-center bg-muted/50 rounded-xl p-1 border border-border/50">
 						<Button
 							variant="ghost"
@@ -398,104 +393,103 @@ const Navbar = () => {
 					</Button>
 				</div>
 			</div>
-
-			{/* Mobile Menu */}
-			{isMobileMenuOpen && (
-				<div className="md:hidden absolute top-14 left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border shadow-lg z-50">
-					<div className="max-w-7xl mx-auto p-4 space-y-3">
-						{loading ? (
-							<div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
-						) : !hasAccount ? (
-							// No account exists - show sign up and import options
-							<div className="space-y-3">
-								<Link href="/" onClick={closeMobileMenu}>
-									<Button
-										variant="outline"
-										size="sm"
-										className="w-full flex items-center gap-2 justify-center"
-									>
-										<UserPlus className="h-4 w-4" />
-										Sign Up
-									</Button>
-								</Link>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => {
-										setIsSeedImportDialogOpen(true);
-										setIsMobileMenuOpen(false);
-									}}
-									className="w-full flex items-center gap-2 justify-center"
-								>
-									<Key className="h-4 w-4" />
-									Import Seed
-								</Button>
-							</div>
-						) : !isAuthenticated ? (
-							// Account exists but not authenticated - show sign in and import options
-							<div className="space-y-3">
-								<Link href="/" onClick={closeMobileMenu}>
-									<Button
-										variant="outline"
-										size="sm"
-										className="w-full flex items-center gap-2 justify-center"
-									>
-										<LogIn className="h-4 w-4" />
-										Sign In
-									</Button>
-								</Link>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => {
-										setIsSeedImportDialogOpen(true);
-										setIsMobileMenuOpen(false);
-									}}
-									className="w-full flex items-center gap-2 justify-center"
-								>
-									<Key className="h-4 w-4" />
-									Import Seed
-								</Button>
-							</div>
-						) : (
-							// Authenticated - show connect wallet and logout
-							<div className="space-y-3">
-								<Dialog open={isConnectDialogOpen} onOpenChange={handleDialogClose}>
-									<DialogTrigger asChild>
+			{
+				isMobileMenuOpen && (
+					<div className="md:hidden absolute top-14 left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border shadow-lg z-50">
+						<div className="max-w-7xl mx-auto p-4 space-y-3">
+							{
+								loading ? (
+									<div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
+								) : !hasAccount ? (
+									// No account exists - show sign up and import options
+									<div className="space-y-3">
+										<Link href="/" onClick={closeMobileMenu}>
+											<Button
+												variant="outline"
+												size="sm"
+												className="w-full flex items-center gap-2 justify-center"
+											>
+												<UserPlus className="h-4 w-4" />
+												Sign Up
+											</Button>
+										</Link>
 										<Button
-											variant="outline"
+											variant="ghost"
 											size="sm"
 											onClick={() => {
-												handleConnectWallet();
+												setIsSeedImportDialogOpen(true);
 												setIsMobileMenuOpen(false);
 											}}
 											className="w-full flex items-center gap-2 justify-center"
 										>
-											<Wallet className="h-4 w-4" />
-											Connect Wallet
+											<Key className="h-4 w-4" />
+											Import Seed
 										</Button>
-									</DialogTrigger>
-									{/* Dialog content is already defined above */}
-								</Dialog>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => {
-										handleLogout();
-										setIsMobileMenuOpen(false);
-									}}
-									className="w-full flex items-center gap-2 justify-center"
-								>
-									<LogOut className="h-4 w-4" />
-									Logout
-								</Button>
-							</div>
-						)}
+									</div>
+								) : !isAuthenticated ? (
+									// Account exists but not authenticated - show sign in and import options
+									<div className="space-y-3">
+										<Link href="/" onClick={closeMobileMenu}>
+											<Button
+												variant="outline"
+												size="sm"
+												className="w-full flex items-center gap-2 justify-center"
+											>
+												<LogIn className="h-4 w-4" />
+												Sign In
+											</Button>
+										</Link>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => {
+												setIsSeedImportDialogOpen(true);
+												setIsMobileMenuOpen(false);
+											}}
+											className="w-full flex items-center gap-2 justify-center"
+										>
+											<Key className="h-4 w-4" />
+											Import Seed
+										</Button>
+									</div>
+								) : (
+									// Authenticated - show connect wallet and logout
+									<div className="space-y-3">
+										<Dialog open={isConnectDialogOpen} onOpenChange={handleDialogClose}>
+											<DialogTrigger asChild>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => {
+														handleConnectWallet();
+														setIsMobileMenuOpen(false);
+													}}
+													className="w-full flex items-center gap-2 justify-center"
+												>
+													<Wallet className="h-4 w-4" />
+													Connect Wallet
+												</Button>
+											</DialogTrigger>
+											{/* Dialog content is already defined above */}
+										</Dialog>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => {
+												handleLogout();
+												setIsMobileMenuOpen(false);
+											}}
+											className="w-full flex items-center gap-2 justify-center"
+										>
+											<LogOut className="h-4 w-4" />
+											Logout
+										</Button>
+									</div>
+								)}
+						</div>
 					</div>
-				</div>
-			)}
-
-			{/* Import Seed Dialog - Single definition used by all Import Seed buttons */}
+				)
+			}
 			<Dialog open={isSeedImportDialogOpen} onOpenChange={handleSeedImportDialogClose}>
 				<DialogContent className="sm:max-w-[500px]">
 					<DialogHeader>
@@ -505,7 +499,7 @@ const Navbar = () => {
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4">
-						<div>
+						<div className="space-y-2">
 							<Label htmlFor="importSeedPhrase">12-Word Seed Phrase</Label>
 							<textarea
 								id="importSeedPhrase"
@@ -515,7 +509,7 @@ const Navbar = () => {
 								className="w-full p-3 border border-input rounded-lg min-h-[100px] font-mono text-sm bg-background"
 							/>
 						</div>
-						<div>
+						<div className="space-y-2">
 							<Label htmlFor="importPassword">New Password</Label>
 							<Input
 								id="importPassword"

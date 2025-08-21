@@ -101,7 +101,7 @@ export const loginWithPassword = async (password: string): Promise<User> => {
     }
 };
 
-// Login with seed phrase (for existing users)
+// Login with seed phrase (for existing users) and regenerate standard wallets
 export const loginWithSeedPhrase = async (seedPhrase: string, newPassword: string): Promise<{ user: User; sessionId: string; error: string | null }> => {
     try {
         if (typeof window === "undefined") {
@@ -124,12 +124,55 @@ export const loginWithSeedPhrase = async (seedPhrase: string, newPassword: strin
             updatedAt: new Date()
         };
 
-        // Store in localStorage (this will overwrite any existing account)
+        // Create standard wallets (Ethereum and Solana) from the imported seed
+        const standardWallets: Wallet[] = [];
+
+        // Create Ethereum wallet (index 0)
+        try {
+            const ethDerivationPath = `m/44'/60'/0'/0/0`;
+            const ethWallet = deriveEthereumFromMnemonic(seedPhrase, ethDerivationPath);
+            
+            const ethWalletData: Wallet = {
+                id: Math.random().toString(36).substring(2, 15),
+                name: "Ethereum Wallet",
+                type: "ETHEREUM",
+                publicKey: ethWallet.address,
+                privateKey: ethWallet.privateKeyHex0x,
+                derivationPath: ethDerivationPath,
+                userId: user.id,
+                createdAt: new Date()
+            };
+            standardWallets.push(ethWalletData);
+        } catch (error) {
+            console.error("Error creating Ethereum wallet:", error);
+        }
+
+        // Create Solana wallet (index 1)
+        try {
+            const solDerivationPath = `m/44'/501'/0'/0'`;
+            const solWallet = await deriveSolanaFromMnemonic(seedPhrase, solDerivationPath);
+            
+            const solWalletData: Wallet = {
+                id: Math.random().toString(36).substring(2, 15),
+                name: "Solana Wallet",
+                type: "SOLANA",
+                publicKey: solWallet.publicKeyBase58,
+                privateKey: solWallet.privateKeyHex,
+                derivationPath: solDerivationPath,
+                userId: user.id,
+                createdAt: new Date()
+            };
+            standardWallets.push(solWalletData);
+        } catch (error) {
+            console.error("Error creating Solana wallet:", error);
+        }
+
+        // Store user and wallets in localStorage (this will overwrite any existing account)
         localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
         localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId);
         localStorage.setItem(STORAGE_KEYS.PASSWORD, newPassword);
         localStorage.setItem(STORAGE_KEYS.ACCOUNT_EXISTS, "true");
-        localStorage.setItem(STORAGE_KEYS.WALLETS, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.WALLETS, JSON.stringify(standardWallets));
 
         return { user, sessionId, error: null };
     } catch (error) {
@@ -401,4 +444,66 @@ export const getAuthenticationStatus = () => {
         hasAccount: accountExists(),
         user: null // Will be set by AuthProvider
     };
+};
+
+// Regenerate wallets from seed phrase (for recovering multiple wallets)
+export const regenerateWalletsFromSeed = async (seedPhrase: string, maxWallets: number = 10): Promise<Wallet[]> => {
+    if (typeof window === "undefined") {
+        throw new Error("This function can only be called on the client side");
+    }
+
+    try {
+        // Validate the seed phrase
+        assertMnemonic(seedPhrase);
+
+        const regeneratedWallets: Wallet[] = [];
+        
+        // Generate both Ethereum and Solana wallets up to maxWallets for each type
+        for (let i = 0; i < maxWallets; i++) {
+            // Generate Ethereum wallet
+            try {
+                const ethDerivationPath = `m/44'/60'/${i}'/0/0`;
+                const ethWallet = deriveEthereumFromMnemonic(seedPhrase, ethDerivationPath);
+                
+                const ethWalletData: Wallet = {
+                    id: `eth_${i}_${Math.random().toString(36).substring(2, 10)}`,
+                    name: i === 0 ? "Ethereum Wallet" : `Ethereum Wallet ${i + 1}`,
+                    type: "ETHEREUM",
+                    publicKey: ethWallet.address,
+                    privateKey: ethWallet.privateKeyHex0x,
+                    derivationPath: ethDerivationPath,
+                    userId: "", // Will be set when user imports
+                    createdAt: new Date()
+                };
+                regeneratedWallets.push(ethWalletData);
+            } catch (error) {
+                console.error(`Error generating Ethereum wallet ${i}:`, error);
+            }
+
+            // Generate Solana wallet
+            try {
+                const solDerivationPath = `m/44'/501'/${i}'/0'`;
+                const solWallet = await deriveSolanaFromMnemonic(seedPhrase, solDerivationPath);
+                
+                const solWalletData: Wallet = {
+                    id: `sol_${i}_${Math.random().toString(36).substring(2, 10)}`,
+                    name: i === 0 ? "Solana Wallet" : `Solana Wallet ${i + 1}`,
+                    type: "SOLANA",
+                    publicKey: solWallet.publicKeyBase58,
+                    privateKey: solWallet.privateKeyHex,
+                    derivationPath: solDerivationPath,
+                    userId: "", // Will be set when user imports
+                    createdAt: new Date()
+                };
+                regeneratedWallets.push(solWalletData);
+            } catch (error) {
+                console.error(`Error generating Solana wallet ${i}:`, error);
+            }
+        }
+
+        return regeneratedWallets;
+    } catch (error) {
+        console.error("Error regenerating wallets from seed:", error);
+        return [];
+    }
 };
